@@ -1,0 +1,79 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Greenweez projesinde kullanılan ham satış, ürün ve sevkiyat verilerini içeren BigQuery veri kaynağı."
+    schema: gz_raw_data
+
+    tables:
+
+      - name: sales
+        identifier: raw_gz_sales
+        description: "Sipariş bazında ürün satışlarını, geliri ve satılan miktarı içeren ham satış tablosu."
+
+        config:
+          loaded_at_field: "cast(date_date as timestamp)"
+          freshness:
+            warn_after:
+              count: 90
+              period: day
+
+        columns:
+          - name: date_date
+            description: "Satış işleminin gerçekleştiği tarih."
+
+          - name: orders_id
+            description: "Siparişin kimlik numarası."
+
+          - name: pdt_id
+            description: "Satılan ürünün kimlik numarası."
+
+          - name: revenue
+            description: "Satış satırından elde edilen gelir."
+
+          - name: quantity
+            description: "Sipariş edilen ürün miktarı."
+
+        data_tests:
+          - unique:
+              arguments:
+                column_name: "concat(cast(orders_id as string), '-', cast(pdt_id as string))"
+
+
+      - name: product
+        identifier: raw_gz_product
+        description: "Ürünlerin kimlik bilgilerini ve satın alma maliyetlerini içeren ham ürün tablosu."
+
+        columns:
+          - name: products_id
+            description: "Ürünün benzersiz kimlik numarası."
+            data_tests:
+              - unique
+              - not_null
+
+          - name: purchse_price
+            description: "Ürünün ham veride bulunan satın alma maliyeti. Staging modelinde purchase_price olarak yeniden adlandırılır ve FLOAT64 veri tipine dönüştürülür."
+
+
+      - name: ship
+        identifier: raw_gz_ship
+        description: "Siparişlere ilişkin kargo ücretlerini ve lojistik maliyetlerini içeren ham sevkiyat tablosu."
+
+        columns:
+          - name: orders_id
+            description: "Sevkiyatın bağlı olduğu siparişin benzersiz kimlik numarası."
+            data_tests:
+              - unique
+              - not_null
+
+          - name: shipping_fee
+            description: "Sipariş için uygulanan kargo ücreti."
+
+          - name: shipping_fee_1
+            description: "Ham veride shipping_fee ile aynı bilgiyi içeren mükerrer kargo ücreti sütunu. Staging modelinde kaldırılır."
+
+          - name: logCost
+            description: "Siparişe ilişkin lojistik maliyet bilgisi."
+
+          - name: ship_cost
+            description: "Siparişin sevkiyat maliyeti. Staging modelinde INT64 veri tipine dönüştürülür."
